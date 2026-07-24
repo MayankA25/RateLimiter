@@ -11,11 +11,16 @@ interface SlidingWindowState {
   timestamps: number[];
 }
 
-class SlidingWindowLog implements Algorithm {
+export class SlidingWindowLog implements Algorithm {
   private readonly limit;
   private readonly window;
 
   constructor(options: SlidingWindowLogOptions) {
+
+    if(options.limit <= 0) throw new Error("Limit Should Be Valid");
+
+    if(options.window <= 0) throw new Error("Window should be valid");
+
     this.limit = options.limit;
     this.window = options.window;
   }
@@ -44,20 +49,23 @@ class SlidingWindowLog implements Algorithm {
 
         const now = Date.now();
 
-        const prevTIme = now - this.window;
+        const windowStart = now - this.window;
 
-        const filterTimeStamps = currentState.timestamps.filter((elem)=>elem >= prevTIme);
+        const filteredTimeStamps = currentState.timestamps.filter((elem)=>elem >= windowStart);
 
-        const newState = {
-            timestamps: filterTimeStamps
-        }
+        // const newState = {
+        //     timestamps: filteredTimeStamps
+        // }
 
-        if(newState.timestamps.length > 0 && newState.timestamps.length >= this.limit){
-            const now = Date.now();
-            const retryAfter = newState.timestamps[0] + this.window - now;
-            const ttl = this.window - (now - newState.timestamps[0]);
+        if(filteredTimeStamps.length > 0 && filteredTimeStamps.length >= this.limit){
+            // const now = Date.now();
+            const oldestTimeStamp = filteredTimeStamps[0]!
+            const retryAfter = oldestTimeStamp + this.window - now;
+            const ttl = this.window - (now - oldestTimeStamp);
             return {
-                value: newState,
+                value: {
+                    timestamps: filteredTimeStamps
+                },
                 ttl: ttl,
                 result: {
                     allowed: false,
@@ -68,12 +76,26 @@ class SlidingWindowLog implements Algorithm {
                 }
             }
         }
-
-        filterTimeStamps.push(Date.now());
+        filteredTimeStamps.push(now);
         const newState = {
-            timestamps: FileSystemDirectoryReader
+            timestamps: filteredTimeStamps
         }
-      },
+
+        const oldestTimeStamp = newState.timestamps[0]!;
+
+        return {
+            value: newState,
+            ttl: this.window - (now - oldestTimeStamp),
+            result: {
+                allowed: true,
+                remaining: this.limit - newState.timestamps.length,
+                retryAfter: 0,
+                limit: this.limit
+            }
+        }
+      }
     );
+
+    return updatedResult
   }
 }

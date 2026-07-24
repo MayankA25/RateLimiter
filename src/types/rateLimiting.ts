@@ -1,3 +1,4 @@
+import type { Algorithm } from "./algorithm.js";
 import type { Store } from "./store.js";
 
 export interface RateLimiterOptions{
