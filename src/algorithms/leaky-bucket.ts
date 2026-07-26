@@ -63,7 +63,8 @@ export class LeakyBucket implements Algorithm {
 
                 const ttl = (updatedLevel)/this.leakRate;
 
-                const retryAfter = 1/this.leakRate;
+                const retryAfter =
+    (updatedLevel + 1 - this.capacity) / this.leakRate;
 
                 return {
                     value: newState,

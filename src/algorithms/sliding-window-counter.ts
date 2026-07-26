@@ -52,7 +52,7 @@ export class SlidingWindowCounter implements Algorithm {
       
       const windowsPassed = Math.floor((windowStart - currentState.currWindowStart)/this.window);
 
-      let totalRequests: number;
+      let totalRequests = 0;
 
       const newState:SlidingWindowCounterState = {
         ...currentState
