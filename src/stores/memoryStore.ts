@@ -52,7 +52,7 @@ export class MemoryStore implements Store {
     this.store.delete(key);
   }
 
-  async acquireLock(key: string){
+  private async acquireLock(key: string){
     const existing = this.locks.get(key);
 
     if(existing){
@@ -72,7 +72,7 @@ export class MemoryStore implements Store {
     })
   }
 
-  async releaseLock(key: string){
+  private async releaseLock(key: string){
     const lock = this.locks.get(key);
 
     if(!lock) return;
