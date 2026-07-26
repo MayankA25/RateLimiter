@@ -45,24 +45,32 @@ export class RedisStore implements Store{
             return null;
         }
 
-        return parsedValue as T;
+        return parsedValue.value as T;
 
     }
 
     async set<T>(key: string, value: T, ttl?:number){
 
-        const serialized = JSON.stringify(value);
-
+        
         if(ttl != undefined){
+            const data: RedisEntry<T> = {
+                value,
+                expiresAt: Date.now() + ttl
+            }
+            const serialized = JSON.stringify(data)
             await this.redis.set(key, serialized, "PX", ttl);
         }
         else{
+             const data: RedisEntry<T> = {
+                value
+            }
+            const serialized = JSON.stringify(data)
             await this.redis.set(key, serialized);
         }
     }
 
     async delete(key: string): Promise<void>{
-        this.redis.del(key);
+        await this.redis.del(key);
     }
     
     private async acquireLock(key: string){
@@ -78,7 +86,7 @@ export class RedisStore implements Store{
             release = res;
         })
 
-        this.set(key, {
+        this.locks.set(key, {
             promise: promise,
             release: release
         })
@@ -90,6 +98,7 @@ export class RedisStore implements Store{
         if(!lock) return;
 
         lock.release();
+        this.locks.delete(key);
     }
 
     async update<T, R>(key: string, updater: (current: T | null) => { value: T; ttl?: number; result: R; }): Promise<R> {
