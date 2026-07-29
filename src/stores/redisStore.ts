@@ -1,5 +1,6 @@
 import { Redis } from "ioredis";
 import type { Store } from "../types/store.js";
+import { randomUUID } from "node:crypto";
 
 
 interface RedisStoreOptions{
@@ -74,35 +75,37 @@ export class RedisStore implements Store{
     }
     
     private async acquireLock(key: string){
-        const existing = this.locks.get(key);
+        const lockKey = `lock:${key}`;
+        const lockValue = randomUUID()
 
-        if(existing){
-            await existing.promise;
+        const result = await this.redis.set(lockKey, lockValue, "PX", 5000, "NX");
+
+        if(result == "OK"){
+            return lockValue;
         }
 
-        let release!: ()=>void;
-
-        const promise = new Promise<void>((res: ()=>void)=>{
-            release = res;
-        })
-
-        this.locks.set(key, {
-            promise: promise,
-            release: release
-        })
+        throw new Error("Could Not Acquire Lock.");
     }
 
-    private async releaseLock(key: string){
-        const lock = this.locks.get(key);
+    private async releaseLock(key: string, lockValue: string){
+        const script = `
+            if redis.call("GET", KEYS[1] == ARGV[1] then return redis.call("DEL", KEYS[1]))
 
-        if(!lock) return;
+            end
 
-        lock.release();
-        this.locks.delete(key);
+            return 0
+        `;
+
+        await this.redis.eval(
+            script,
+            1,
+            `lock:${key}`,
+            lockValue
+        )
     }
 
     async update<T, R>(key: string, updater: (current: T | null) => { value: T; ttl?: number; result: R; }): Promise<R> {
-        await this.acquireLock(key);
+        const lockValue = await this.acquireLock(key);
 
         try{
             const value = await this.get<T>(key);
@@ -114,7 +117,7 @@ export class RedisStore implements Store{
             return update.result;
 
         }finally{
-            await this.releaseLock(key)
+            await this.releaseLock(key, lockValue);
         }
     }
 
