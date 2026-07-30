@@ -1,10 +1,13 @@
 import { Collection, MongoClient } from "mongodb";
 import type { Store } from "../types/store.js";
+import { randomUUID } from "node:crypto";
 
 interface MongoOptions{
     uri: string;
     database: string;
-    collection: string
+    collection: string;
+    lockCollection?: string;
+    lockTtl?: number;
 }
 
 interface MongoDoc<T>{
@@ -13,16 +16,10 @@ interface MongoDoc<T>{
     expiresAt?: number | null
 }
 
-interface Lock{
-    promise: Promise<void>
-    release: ()=>void
-}
 
 export class MongoStore implements Store{
 
-    private readonly locks = new Map<string, Lock>();
-
-    private constructor(private readonly client: MongoClient, private collection: Collection){}
+    private constructor(private readonly client: MongoClient, private readonly collection: Collection, private readonly lockCollection: Collection, private readonly lockTtl: number){}
 
     static async create(options: MongoOptions){
         const client = new MongoClient(options.uri);
@@ -36,8 +33,21 @@ export class MongoStore implements Store{
             { expireAfterSeconds: 0 }
         )
 
+        const lockCollection = db.collection(options.lockCollection ? options.lockCollection : "rate_limiter_locks");
 
-        return new MongoStore(client, collection)
+        const lockTtl = options.lockTtl ? options.lockTtl : 5000
+
+        await lockCollection.createIndex(
+            { expiresAt: 1 },
+            { expireAfterSeconds: 0 }
+        )
+
+        await lockCollection.createIndex(
+            { lockKey: 1 },
+            { unique: true }
+        )
+
+        return new MongoStore(client, collection, lockCollection, lockTtl)
     }
 
 
@@ -88,36 +98,54 @@ export class MongoStore implements Store{
 
 
     private async acquireLock(key: string){
-        const existing = this.locks.get(key);
+       const owner = randomUUID()
 
-        if(existing){
-            await existing.promise;
+        while(true){
+            try{
+                const result = await this.lockCollection.findOneAndUpdate(
+                    {
+                        lockKey: key,
+                        expiresAt: {
+                            $lte: new Date()
+                        }
+                    },
+                    {
+                        $set: {
+                            owner,
+                            expiresAt: new Date(Date.now() + this.lockTtl)
+                        }
+                    },
+                    {
+                        returnDocument: "after"
+                    }
+                )
+
+                if(result) return owner;
+
+                await this.lockCollection.insertOne({
+                    lockKey: key,
+                    owner: owner,
+                    expiresAt: new Date(Date.now() + this.lockTtl)
+                })
+
+                return owner
+            }
+            catch{
+                await new Promise((resolve)=>setTimeout(resolve, 50))
+            }
         }
-
-        let release!: ()=>void;
-
-        const promise = new Promise<void>((res: ()=>void)=>{
-            release = res;
-        })
-
-        this.locks.set(key, {
-            promise: promise,
-            release: release
-        })
     }
 
-    private async releaseLock(key: string){
-        const lock = this.locks.get(key);
-
-        if(!lock) return;
-
-        lock.release();
-        this.locks.delete(key);
+    private async releaseLock(key: string, owner: string){
+        await this.lockCollection.deleteOne({
+            lockKey: key,
+            owner: owner
+        })
     }
 
 
     async update<T, R>(key: string, updater: (current: T | null) => { value: T; ttl?: number; result: R; }): Promise<R> {
-        await this.acquireLock(key);
+        const owner = await this.acquireLock(key);
 
         try{
             const value = await this.get<T>(key);
@@ -129,7 +157,7 @@ export class MongoStore implements Store{
             return update.result;
 
         }finally{
-            await this.releaseLock(key)
+            await this.releaseLock(key, owner)
         }
     }
 
