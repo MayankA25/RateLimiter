@@ -31,7 +31,7 @@ export class RedisStore implements Store{
             this.redis = new Redis(options.url);
         }
         else{
-            throw new Error("Either Provider Redis Client or URL");
+            throw new Error("Either Provide Redis Client or URL");
         }
     }
 
@@ -54,6 +54,7 @@ export class RedisStore implements Store{
 
         
         if(ttl != undefined){
+            ttl = Math.max(1, Math.ceil(ttl));
             const data: RedisEntry<T> = {
                 value,
                 expiresAt: Date.now() + ttl
@@ -89,7 +90,7 @@ export class RedisStore implements Store{
 
     private async releaseLock(key: string, lockValue: string){
         const script = `
-            if redis.call("GET", KEYS[1] == ARGV[1] then return redis.call("DEL", KEYS[1]))
+            if redis.call("GET", KEYS[1]) == ARGV[1] then return redis.call("DEL", KEYS[1])
 
             end
 
