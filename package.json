@@ -38,14 +38,25 @@
     "mongodb",
     "postgresql"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Mayank Arora",
+  "license": "MIT",
+   "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MayankA25/rate-forge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MayankA25/rate-forge/issues"
+  },
+  "homepage": "https://github.com/MayankA25/rate-forge#readme",
   "type": "module",
   "devDependencies": {
     "@types/node": "^26.1.1",
     "@types/pg": "^8.20.0",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2"
+  },
+   "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "ioredis": "^5.11.1",
