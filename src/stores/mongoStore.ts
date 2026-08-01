@@ -22,6 +22,19 @@ export class MongoStore implements Store{
     private constructor(private readonly client: MongoClient, private readonly collection: Collection, private readonly lockCollection: Collection, private readonly lockTtl: number){}
 
     static async create(options: MongoOptions){
+
+        if(options.uri){
+            throw new Error("Mongo URI is required");
+        }
+
+        if(!options.database){
+            throw new Error("Database name is required");
+        }
+
+        if(!options.collection){
+            throw new Error("Mongo collection name is required");
+        }
+
         const client = new MongoClient(options.uri);
         await client.connect();
 

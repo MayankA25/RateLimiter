@@ -18,6 +18,11 @@ export class PostgresStore implements Store {
   ) {}
 
   static async create(options: PostgresOptions) {
+
+    if(!options.pool && !options.connectionString){
+      throw new Error("Either provide a pool client or conenction string");
+    }
+
     const pool =
       options.pool ??
       new Pool({

@@ -17,7 +17,14 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc"
   },
-  "keywords": [],
+  "keywords": [
+    "rate-limit",
+    "redis",
+    "mongodb",
+    "postgres",
+    "typescript",
+    "middleware"
+  ],
   "author": "",
   "license": "ISC",
   "type": "module",
