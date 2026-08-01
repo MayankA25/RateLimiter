@@ -51,7 +51,7 @@ export class TokenBucket implements Algorithm{
             const elapsedTime = (now - currentState.lastRefill)/1000;
             
             const earnedTokens = elapsedTime * this.refillRate
-            
+            console.log("Earned Tokens: ", earnedTokens);
             const availableTokens = Math.min(this.capacity, currentState.tokens + earnedTokens)
 
 
@@ -71,7 +71,7 @@ export class TokenBucket implements Algorithm{
                     result: {
                         allowed: false,
                         remaining: 0,
-                        retryAfter: retryAfter*1000,
+                        retryAfter: Math.ceil(retryAfter*1000),
                         limit: this.capacity
                     }   
                 }
@@ -92,7 +92,7 @@ export class TokenBucket implements Algorithm{
                 result: {
                     allowed: true,
                     remaining: Math.floor(newState.tokens),
-                    retryAfter: newState.tokens < 1 ? ((1-newState.tokens)/this.refillRate)*1000 : 0,
+                    retryAfter: newState.tokens < 1 ? Math.ceil(((1-newState.tokens)/this.refillRate)*1000) : 0,
                     limit: this.capacity
                 }
             }
