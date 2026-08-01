@@ -1,59 +1,44 @@
-# Rate Limiter
+# Rate Forge
 
-A production-ready, framework-agnostic rate limiting library for Node.js with multiple algorithms and pluggable storage backends.
+> A production-ready, framework-agnostic rate limiting library for Node.js with multiple algorithms and pluggable storage backends.
+
+![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)
+![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-green)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+---
 
 ## ✨ Features
 
 - 🚀 Production-ready
 - ⚡ High performance
 - 🧩 Framework agnostic
+- 📦 Fully written in TypeScript
 - 🔌 Pluggable storage backends
-- 📦 Written in TypeScript
 - 🔒 Atomic operations for concurrent requests
 - 📈 Multiple rate limiting algorithms
-- 🛠 Easy to extend with custom algorithms and stores
+- 🛠 Easily extensible
+- 🎯 Simple and intuitive API
 
 ---
 
-## Installation
+# Installation
 
 ```bash
-npm install rate-limiter
+npm install rate-forge
 ```
 
 or
 
 ```bash
-yarn add rate-limiter
+yarn add rate-forge
 ```
 
 or
 
 ```bash
-pnpm add rate-limiter
+pnpm add rate-forge
 ```
-
----
-
-## Supported Algorithms
-
-| Algorithm | Description |
-|-----------|-------------|
-| Fixed Window | Counts requests within a fixed time window. |
-| Sliding Window Log | Stores timestamps for accurate limiting. |
-| Sliding Window Counter | Approximation of Sliding Window Log with lower memory usage. |
-| Token Bucket | Allows bursts while maintaining a refill rate. |
-| Leaky Bucket | Processes requests at a constant rate. |
-| GCRA | Production-grade algorithm used by APIs like Cloudflare and NGINX. |
-
----
-
-## Supported Stores
-
-- Memory Store
-- Redis Store
-- MongoDB Store
-- PostgreSQL Store
 
 ---
 
@@ -63,8 +48,8 @@ pnpm add rate-limiter
 import {
     RateLimiter,
     MemoryStore,
-    FixedWindow
-} from "rate-limiter";
+    FixedWindow,
+} from "rate-forge";
 
 const limiter = new RateLimiter({
     algorithm: new FixedWindow({
@@ -96,12 +81,34 @@ if (!result.allowed) {
 
 ---
 
-# Storage Backends
+# Supported Algorithms
+
+| Algorithm | Description |
+|------------|-------------|
+| Fixed Window | Counts requests within a fixed time window. |
+| Sliding Window Log | Stores timestamps for precise rate limiting. |
+| Sliding Window Counter | Memory-efficient approximation of Sliding Window Log. |
+| Token Bucket | Allows burst traffic while maintaining a refill rate. |
+| Leaky Bucket | Processes requests at a constant rate. |
+| GCRA | Production-grade algorithm used by high-performance APIs. |
+
+---
+
+# Supported Stores
+
+- Memory Store
+- Redis Store
+- MongoDB Store
+- PostgreSQL Store
+
+---
+
+# Storage Examples
 
 ## Memory Store
 
 ```ts
-import { MemoryStore } from "rate-limiter";
+import { MemoryStore } from "rate-forge";
 
 const store = new MemoryStore();
 ```
@@ -111,7 +118,7 @@ const store = new MemoryStore();
 ## Redis Store
 
 ```ts
-import { RedisStore } from "rate-limiter";
+import { RedisStore } from "rate-forge";
 
 const store = new RedisStore({
     url: process.env.REDIS_URL!,
@@ -123,7 +130,7 @@ const store = new RedisStore({
 ## MongoDB Store
 
 ```ts
-import { MongoStore } from "rate-limiter";
+import { MongoStore } from "rate-forge";
 
 const store = new MongoStore({
     uri: process.env.MONGO_URI!,
@@ -136,7 +143,7 @@ const store = new MongoStore({
 ## PostgreSQL Store
 
 ```ts
-import { PostgresStore } from "rate-limiter";
+import { PostgresStore } from "rate-forge";
 
 const store = new PostgresStore({
     connectionString: process.env.DATABASE_URL!,
@@ -145,7 +152,7 @@ const store = new PostgresStore({
 
 ---
 
-# Algorithms
+# Algorithm Examples
 
 ## Fixed Window
 
@@ -215,7 +222,7 @@ new GCRA({
 
 # API
 
-## RateLimiter
+## Create a Rate Limiter
 
 ```ts
 const limiter = new RateLimiter({
@@ -224,7 +231,9 @@ const limiter = new RateLimiter({
 });
 ```
 
-### Check a Request
+---
+
+## Check a Request
 
 ```ts
 const result = await limiter.isRequestAllowed(key);
@@ -234,26 +243,35 @@ const result = await limiter.isRequestAllowed(key);
 
 # Result Object
 
-| Property | Type | Description |
-|----------|------|-------------|
-| allowed | boolean | Whether the request is allowed |
-| limit | number | Maximum requests |
-| remaining | number | Remaining requests |
-| retryAfter | number | Retry time in milliseconds |
+```ts
+interface Result {
+    allowed: boolean;
+    limit: number;
+    remaining: number;
+    retryAfter: number;
+}
+```
+
+| Property | Description |
+|-----------|-------------|
+| `allowed` | Whether the request is allowed |
+| `limit` | Maximum number of requests |
+| `remaining` | Remaining requests |
+| `retryAfter` | Retry time in milliseconds |
 
 ---
 
 # Framework Integration
 
-This package is framework agnostic.
+Rate Forge is completely framework agnostic.
 
-Simply generate a unique key for each client and call:
+Simply generate a unique key and pass it to the rate limiter.
 
 ```ts
 await limiter.isRequestAllowed(key);
 ```
 
-Examples of keys:
+Examples:
 
 ```ts
 req.ip
@@ -279,12 +297,18 @@ apiKey
 
 # TypeScript
 
-Fully written in TypeScript with complete type definitions.
+Rate Forge is fully written in TypeScript and ships with complete type definitions.
 
 ---
 
 # Contributing
 
-Contributions are welcome.
+Contributions are welcome!
 
-Feel free to open issues or submit pull requests.
+Feel free to open an issue or submit a pull request.
+
+---
+
+# License
+
+MIT
