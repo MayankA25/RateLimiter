@@ -1,7 +1,7 @@
 {
   "name": "rate-limiter",
   "version": "1.0.0",
-  "description": "",
+  "description": "Framework-agnostic rate limiter for Node.js supporting multiple algorithms and storage backends including Memory, Redis, MongoDB, and PostgreSQL.",
   "main": "./dist/index.js",
   "types": "./dist/types/index.d.ts",
   "exports": {
